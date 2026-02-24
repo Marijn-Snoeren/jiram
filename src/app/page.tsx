@@ -66,14 +66,14 @@ const SECTIONS: Section[] = [
     title: "Videos",
     links: [
       { 
-        name: "Calisthenics Transformation", 
+        name: "Video", 
         url: "https://www.youtube.com/watch?v=QkjxgFJ2Z9E", 
         icon: PlayCircle,
         isYoutube: true 
       },
       { 
-        name: "Beginner Guide", 
-        url: "https://www.youtube.com/watch?v=w-Jr2hxJFqo", 
+        name: "Video", 
+        url: "https://www.youtube.com/watch?v=cOj0vPsc8S4", 
         icon: PlayCircle,
         isYoutube: true 
       },
@@ -149,7 +149,6 @@ async function YouTubeCard({ name, url }: { name: string, url: string }) {
   const videoId = getYoutubeId(url);
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   
-  // Fetch the actual title dynamically
   const dynamicTitle = await getVideoTitle(url, name);
 
   return (
@@ -168,10 +167,7 @@ async function YouTubeCard({ name, url }: { name: string, url: string }) {
       {/* Overlay for readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
       
-      {/* Play Icon Badge */}
-      <div className="absolute top-4 right-4 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition-colors">
-        <Play size={18} fill="currentColor" className="text-white ml-0.5" />
-      </div>
+      {/* Play Icon Badge REMOVED */}
 
       <div className="relative z-10 w-full">
         <span className="text-[14px] font-black uppercase tracking-wider text-white line-clamp-2 drop-shadow-md">
@@ -258,9 +254,10 @@ export default async function LinkTree() {
                 {section.title}
               </h2>
             </div>
-            <div className="flex flex-col gap-3 w-full">
+            
+            {/* Grid for Equipment (rows of 2), Flex for others */}
+            <div className={section.title === "My Equipment" ? "grid grid-cols-2 gap-3 w-full" : "flex flex-col gap-3 w-full"}>
               {section.links.map((link, i) => {
-                // Check if it's a YouTube link to use the card style
                 if (link.isYoutube) {
                   // @ts-expect-error - Server Component in map
                   return <YouTubeCard key={i} name={link.name} url={link.url} />;
@@ -283,10 +280,13 @@ export default async function LinkTree() {
                         {link.name}
                       </span>
                     </div>
-                    <ChevronRight 
-                      size={18} 
-                      className="flex-shrink-0 text-neutral-400 group-hover:translate-x-1 group-hover:text-red-600 transition-all" 
-                    />
+                    {/* Hide arrow in grid view to save space, show in list view */}
+                    {section.title !== "My Equipment" && (
+                      <ChevronRight 
+                        size={18} 
+                        className="flex-shrink-0 text-neutral-400 group-hover:translate-x-1 group-hover:text-red-600 transition-all" 
+                      />
+                    )}
                   </a>
                 );
               })}
