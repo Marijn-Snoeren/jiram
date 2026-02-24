@@ -7,7 +7,8 @@ import {
   MessageCircle,
   Dumbbell,
   Sparkle,
-  LucideIcon
+  LucideIcon,
+  Users
 } from "lucide-react";
 
 // --- Types ---
@@ -67,56 +68,107 @@ const SOCIAL_LINKS = [
   },
 ];
 
-async function getTikTokData(username: string) {
-  try {
-    const res = await fetch(
-      `https://www.tiktok.com/oembed?url=https://www.tiktok.com/@${username}`, 
-      { next: { revalidate: 3600 } }
-    );
-    return res.ok ? res.json() : null;
-  } catch { return null; }
+// --- Helpers ---
+function formatCount(count: number): string {
+  if (count >= 1000000) return (count / 1000000).toFixed(1) + "M";
+  if (count >= 1000) return (count / 1000).toFixed(1) + "K";
+  return count.toString();
 }
 
+// --- API Functies ---
+async function getInstagramCount(username: string): Promise<number> {
+  try {
+    const response = await fetch(`https://instagram-statistics-api.p.rapidapi.com/community?url=https%3A%2F%2Fwww.instagram.com%2F${username}%2F`, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-host': 'instagram-statistics-api.p.rapidapi.com',
+        'x-rapidapi-key': process.env.RAPIDAPI_KEY || ''
+      },
+      next: { revalidate: 50000 }
+    });
+    if (!response.ok) return 0;
+    const result = await response.json();
+    return result.data?.usersCount || 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function getTikTokCount(username: string): Promise<number> {
+  try {
+    const response = await fetch(`https://www.tiktok.com/@${username}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) return 0;
+    const html = await response.text();
+    const jsonStr = html.split('<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">')[1]?.split('</script>')[0];
+    if (!jsonStr) return 0;
+    const data = JSON.parse(jsonStr);
+    return data["__DEFAULT_SCOPE__"]?.["webapp.user-detail"]?.userInfo?.stats?.followerCount || 0;
+  } catch {
+    return 0;
+  }
+}
+
+// --- Main Component ---
 export default async function LinkTree() {
   const username = "jiram.sw";
-  const tiktokData = await getTikTokData(username);
-  const name = tiktokData?.author_name || "Jiram Sw";
-  const avatar = `https://unavatar.io/tiktok/${username}`;
+  
+  const [igCount, ttCount] = await Promise.all([
+    getInstagramCount(username),
+    getTikTokCount(username)
+  ]);
+
+  const totalFollowersFormatted = formatCount(igCount + ttCount);
+  const bannerImage = `https://unavatar.io/tiktok/${username}`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#050505] text-white font-sans selection:bg-neutral-800 relative overflow-hidden">
-      {/* Subtle Red Touches (Static Gradients, no glow/blur) */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" 
-           style={{ 
-             background: 'radial-gradient(circle at 0% 0%, #7f1d1d 0%, transparent 40%), radial-gradient(circle at 100% 100%, #7f1d1d 0%, transparent 40%)' 
-           }} 
-      />
+    <div className="min-h-screen flex flex-col bg-[#050505] text-white font-sans selection:bg-neutral-800 relative overflow-x-hidden">
       
-      {/* 1. Profile Section */}
-      <div className="flex flex-col items-center pt-12 pb-8 px-6 z-10">
-        <div className="relative w-32 h-32 border-2 border-white rounded-full overflow-hidden">
-          <Image 
-            src={avatar} 
-            alt={name} 
-            fill 
-            className="object-cover" 
-            unoptimized 
-            priority
-          />
-        </div>
+      {/* 1. Hero Banner Section */}
+      <div className="relative w-full h-[40vh] md:h-[50vh] overflow-hidden">
+        <Image 
+          src={bannerImage} 
+          alt="Jiram" 
+          fill 
+          className="object-cover object-top scale-105" 
+          unoptimized 
+          priority
+        />
         
-        <div className="text-center mt-6">
-          <h1 className="text-3xl font-bold tracking-tight text-white">{name}</h1>
-          <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.3em] mt-3 mb-8">
-            Calisthenics Athlete
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
+        
+        <div className="absolute bottom-4 left-0 w-full p-6 flex flex-col items-center text-center">
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase italic text-white drop-shadow-2xl">
+                Jiram
+            </h1>
 
-          <div className="flex gap-4 justify-center">
+            <div className="flex items-center gap-2 mt-4 mb-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
+                <Users size={14} className="text-red-500" />
+                <span className="text-[12px] font-black tracking-wider uppercase">
+                  {totalFollowersFormatted} Followers
+                </span>
+            </div>
+            
+            <p className="text-neutral-400 text-[10px] font-black uppercase tracking-[0.4em] mt-2">
+                Calisthenics Athlete
+            </p>
+        </div>
+      </div>
+
+      {/* 2. Content Section */}
+      <main className="flex-grow px-6 pb-20 space-y-12 max-w-md mx-auto w-full z-10 -mt-6 box-border">
+        
+        {/* Social Icons Bar */}
+        <div className="flex gap-4 justify-center">
             {SOCIAL_LINKS.map((social) => (
               <a
                 key={social.label}
                 href={social.url}
-                className="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl"
+                className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-neutral-900 border border-white/10 rounded-2xl hover:bg-white/10 hover:scale-105 transition-all active:scale-95"
                 aria-label={social.label}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -126,21 +178,18 @@ export default async function LinkTree() {
                 </svg>
               </a>
             ))}
-          </div>
         </div>
-      </div>
 
-      {/* 2. Main Links */}
-      <main className="flex-grow px-6 space-y-10 max-w-md mx-auto w-full z-10">
+        {/* Link Sections */}
         {SECTIONS.map((section) => (
-          <section key={section.title} className="space-y-4">
-            <div className="flex items-center gap-3">
+          <section key={section.title} className="space-y-4 w-full">
+            <div className="flex items-center gap-3 ml-1">
               <div className="w-[3px] h-4 bg-red-600 rounded-full" />
-              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-neutral-400">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-neutral-500">
                 {section.title}
               </h2>
             </div>
-            <div className="grid gap-3">
+            <div className="flex flex-col gap-3 w-full">
               {section.links.map((link, i) => {
                 const Icon = link.icon;
                 return (
@@ -149,19 +198,20 @@ export default async function LinkTree() {
                     href={link.url} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative flex items-center justify-between p-4 bg-neutral-900/50 border border-white/10 rounded-2xl"
+                    className="group relative flex items-center justify-between p-4 bg-neutral-900/40 border border-white/5 rounded-2xl hover:bg-neutral-900/80 hover:border-red-600/50 transition-all active:scale-[0.98] w-full"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-white text-black">
+                    <div className="flex items-center gap-4 min-w-0 flex-1 mr-2">
+                      <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-white text-black group-hover:bg-red-600 group-hover:text-white transition-colors">
                         <Icon size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="text-[15px] font-bold tracking-tight text-white/90 leading-tight">
+                      {/* FIXED: Text wrapping logic */}
+                      <span className="text-[15px] font-bold tracking-tight text-white/90 leading-tight break-words whitespace-normal">
                         {link.name}
                       </span>
                     </div>
                     <ChevronRight 
                       size={18} 
-                      className="flex-shrink-0 text-neutral-500" 
+                      className="flex-shrink-0 text-neutral-600 group-hover:translate-x-1 group-hover:text-white transition-all" 
                     />
                   </a>
                 );
@@ -171,12 +221,13 @@ export default async function LinkTree() {
         ))}
       </main>
 
-      {/* 3. Footer */}
-      <footer className="py-12 text-center z-10">
+      <footer className="pb-12 pt-4 text-center z-10">
          <p className="text-neutral-700 text-[10px] font-medium tracking-widest uppercase">
-            © {new Date().getFullYear()} JIRAM
+            © {new Date().getFullYear()} JIRAM • All Rights Reserved
          </p>
       </footer>
+
+      <div className="fixed bottom-0 right-0 w-[300px] h-[300px] bg-red-900/10 blur-[120px] rounded-full -z-10 pointer-events-none" />
     </div>
   );
 }
