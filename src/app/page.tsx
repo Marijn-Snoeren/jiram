@@ -9,13 +9,14 @@ import {
   Sparkle,
   LucideIcon,
   Users,
+  Tag,
 } from "lucide-react";
 
 // --- Types ---
 interface LinkItem {
   name: string; // Fallback name
   url: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   isYoutube?: boolean;
 }
 
@@ -56,12 +57,22 @@ function formatCount(count: number): string {
 // --- Data Configuration ---
 const SECTIONS: Section[] = [
   {
+    title: "My Code",
+    links: [
+      {
+        name: 'USE CODE "JIRAM10" FOR 10% OFF YOUR GORNATION ORDER!',
+        url: "https://www.gornation.com",
+        icon: Tag,
+      },
+    ],
+  },
+  {
     title: "My Equipment",
     links: [
-      { name: "Parallettes", url: "#", icon: Dumbbell },
-      { name: "Dip Bars", url: "#", icon: Dumbbell },
-      { name: "Chalk", url: "#", icon: Sparkle },
-      { name: "Camera", url: "#", icon: Camera },
+      { name: "Parallettes", url: "#" },
+      { name: "Dip Bars", url: "#" },
+      { name: "Chalk", url: "#" },
+      { name: "Camera", url: "#" },
     ],
   },
   {
@@ -142,7 +153,9 @@ async function getTikTokCount(username: string): Promise<number> {
     if (!response.ok) return 0;
     const html = await response.text();
     const jsonStr = html
-      .split('<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">')[1]
+      .split(
+        '<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">'
+      )[1]
       ?.split("</script>")[0];
     if (!jsonStr) return 0;
     const data = JSON.parse(jsonStr);
@@ -169,15 +182,11 @@ async function YouTubeCard({ name, url }: { name: string; url: string }) {
       rel="noopener noreferrer"
       className="group relative h-44 w-full overflow-hidden rounded-2xl bg-neutral-900 p-4 shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/5 flex items-end"
     >
-      {/* Background Thumbnail */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
         style={{ backgroundImage: `url(${thumbnailUrl})` }}
       />
-
-      {/* Overlay for readability */}
       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent" />
-
       <div className="relative z-10 w-full">
         <span className="text-[14px] font-black uppercase tracking-wider text-white line-clamp-2 drop-shadow-md">
           {dynamicTitle}
@@ -201,7 +210,7 @@ export default async function LinkTree() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#050505] font-sans text-white selection:bg-neutral-800">
-      {/* 1. Hero Banner Section */}
+      {/* Hero Banner Section */}
       <div className="relative h-[40vh] w-full overflow-hidden md:h-[50vh]">
         <Image
           src={bannerImage}
@@ -211,21 +220,18 @@ export default async function LinkTree() {
           unoptimized
           priority
         />
-
         <div className="absolute inset-0 bg-linear-to-t from-[#050505] via-[#050505]/40 to-transparent" />
-
         <div className="absolute bottom-4 left-0 flex w-full flex-col items-center p-6 text-center">
           <h1 className="text-5xl font-black italic uppercase tracking-tighter text-white drop-shadow-2xl md:text-6xl">
             Jiram
           </h1>
-
           <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-neutral-400">
             Calisthenics Athlete
           </p>
         </div>
       </div>
 
-      {/* 2. Content Section */}
+      {/* Content Section */}
       <main className="z-10 -mt-6 grow box-border space-y-12 px-6 pb-20 w-full max-w-md mx-auto">
         {/* Social Icons Bar */}
         <div className="flex items-center justify-center gap-3">
@@ -243,7 +249,6 @@ export default async function LinkTree() {
               </svg>
             </a>
           ))}
-
           <div className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-neutral-900 px-5">
             <Users size={14} className="text-red-600" />
             <span className="text-[12px] font-black tracking-wider uppercase">
@@ -257,12 +262,11 @@ export default async function LinkTree() {
           <section key={section.title} className="w-full space-y-4">
             <div className="ml-1 flex items-center gap-3">
               <div className="h-4 w-[3px] rounded-full bg-red-600" />
-              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-neutral-500">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-white">
                 {section.title}
               </h2>
             </div>
 
-            {/* Grid for Equipment (rows of 2), Flex for others */}
             <div
               className={
                 section.title === "My Equipment"
@@ -285,20 +289,20 @@ export default async function LinkTree() {
                     className="group relative flex w-full items-center justify-between rounded-2xl border border-transparent bg-white p-4 shadow-lg transition-all active:scale-[0.98] hover:bg-neutral-100"
                   >
                     <div className="mr-2 flex min-w-0 flex-1 items-center gap-4">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center text-black transition-colors group-hover:text-red-600">
-                        <Icon size={20} strokeWidth={2.5} />
-                      </div>
+                      {Icon && (
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center text-black transition-colors group-hover:text-red-600">
+                          <Icon size={20} strokeWidth={2.5} />
+                        </div>
+                      )}
                       <span className="wrap-break-word text-[15px] font-bold leading-tight tracking-tight text-black whitespace-normal">
                         {link.name}
                       </span>
                     </div>
-                    {/* Hide arrow in grid view to save space, show in list view */}
-                    {section.title !== "My Equipment" && (
-                      <ChevronRight
-                        size={18}
-                        className="shrink-0 text-neutral-400 transition-all group-hover:translate-x-1 group-hover:text-red-600"
-                      />
-                    )}
+                    {/* Arrow visible for ALL list/grid items now */}
+                    <ChevronRight
+                      size={18}
+                      className="shrink-0 text-neutral-400 transition-all group-hover:translate-x-1 group-hover:text-red-600"
+                    />
                   </a>
                 );
               })}
