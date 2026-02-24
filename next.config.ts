@@ -1,10 +1,16 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  turbopack: {
-    // Ensures Turbopack resolves the correct workspace root in environments
-    // that have multiple lockfiles (monorepos / shared home directories).
-    root: __dirname,
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'unavatar.io',
+      },
+    ],
   },
 };
 
